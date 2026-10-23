@@ -20,4 +20,52 @@ def test_get_pdf_files_empty_folder(tmp_path):
 
     assert result == []
 
+import csv
+from main import export_inventory
+
+def test_export_inventory_writes_correct_data(tmp_path):
+    # create a sample PDF file
+    pdf1 = tmp_path / "paper.pdf"
+    pdf2 = tmp_path / "report.pdf"
+
+    pdf1.write_bytes(b"12345")
+    pdf2.write_bytes(b"1234567890")
+
+    output_file = tmp_path / "inventory.csv" 
+
+    export_inventory([pdf1, pdf2], output_file)
+
+    with open(output_file, newline="", encoding="utf-8") as file:
+        reader = csv.DictReader(file)
+        rows = list(reader)
+
+    assert reader.fieldnames == ["filename", "extension", "size_bytes", "size_kb",]
+    assert len(rows) == 2
+
+    assert rows[0]["filename"] == "paper.pdf"
+    assert rows[0]["extension"] == ".pdf"
+    assert int(rows[0]["size_bytes"]) == 5
+    assert float(rows[0]["size_kb"]) == 5 / 1024
+
+    assert rows[1]["filename"] == "report.pdf"
+    assert int(rows[1]["size_bytes"]) == 10
+
+def test_export_inventory_empty_list(tmp_path):
+    output_file = tmp_path / "empty_inventory.csv"
+
+    export_inventory([], output_file)
+
+    with open(output_file, newline="", encoding="utf-8") as file:
+        reader = csv.DictReader(file)
+        rows = list(reader)
+
+        assert reader.fieldnames == [
+            "filename",
+            "extension",
+            "size_bytes",
+            "size_kb",
+        ]
+        assert rows == []
+
+
     
