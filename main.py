@@ -11,7 +11,7 @@ def main():
     print(f"Found {len(pdf_files)} PDF files.")
 
     for pdf in pdf_files:
-        print(pdf)
+        print(f"{pdf} - {pdf.stat().st_size / (1024):.2f} KB")
 
 if __name__ == "__main__":
     main()
