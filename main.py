@@ -29,6 +29,13 @@ def extract_text_from_pdf(pdf_path):
 
     return "\n".join(pages)
 
+def save_extracted_text_to_file(text, output_path):
+    """Saves the extracted text to UTF-8 text file."""
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    output_path.write_text(text, encoding="utf-8")
+
 def main():
     folder = Path("research_papers")
     pdf_files = get_pdf_files(folder)
@@ -44,9 +51,15 @@ def main():
     pdf_path = Path("research_papers/download.pdf")
     extracted_text = extract_text_from_pdf(pdf_path)
 
-    print("\n --Extracted Text from download.pdf--")
-    print(extracted_text[:1000])
+    # print("\n --Extracted Text from download.pdf--")
+    # print(extracted_text[:1000])
 
     print(f"Inventory saved to: {output_file.resolve()}")
+
+    output_path = Path("extracted_text/download.txt")
+    save_extracted_text_to_file(extracted_text, output_path)
+
+    print(f"Extracted text saved to: {output_path.resolve()}")
+
 if __name__ == "__main__":
     main()

@@ -94,4 +94,19 @@ def test_extract_text_from_pdf_empty_pdf(tmp_path):
     assert result == ""
     
 
-    
+from main import save_extracted_text_to_file
+
+def test_save_extracted_text(tmp_path):
+    output_path = tmp_path / "output.txt"
+    sample_text = "Artificial intelligence helps researchers."
+
+    save_extracted_text_to_file(sample_text, output_path)
+    assert output_path.exists() 
+    assert output_path.read_text(encoding="utf-8") == sample_text
+
+def test_save_extracted_text_unicode(tmp_path):
+    output_path = tmp_path / "paper.txt"
+    sample_text = "Research paper: AI and coding"
+
+    save_extracted_text_to_file(sample_text, output_path)
+    assert output_path.read_text(encoding="utf-8") == sample_text
