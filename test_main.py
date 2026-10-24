@@ -67,5 +67,31 @@ def test_export_inventory_empty_list(tmp_path):
         ]
         assert rows == []
 
+import csv
+import pymupdf as pymu
+
+from main import (get_pdf_files, export_inventory, extract_text_from_pdf)
+
+def test_extract_text_from_pdf(tmp_path):
+    pdf_path = tmp_path / "sample.pdf"
+
+    with pymu.open() as doc:
+        page = doc.new_page()
+        page.insert_text((72, 72), "Artifical intelligence helps researchers.")
+        doc.save(pdf_path)
+
+    result = extract_text_from_pdf(pdf_path)
+    assert "Artifical intelligence helps researchers." in result
+
+def test_extract_text_from_pdf_empty_pdf(tmp_path):
+    pdf_path = tmp_path / "blank.pdf"
+
+    with pymu.open() as doc:
+        doc.new_page()
+        doc.save(pdf_path)
+
+    result = extract_text_from_pdf(pdf_path)
+    assert result == ""
+    
 
     

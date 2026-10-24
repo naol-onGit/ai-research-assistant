@@ -1,4 +1,5 @@
 from pathlib import Path
+import pymupdf as pymu
 import csv
 
 def get_pdf_files(folder_path):
@@ -18,6 +19,16 @@ def export_inventory(pdf_files, output_file):
                 "size_kb": pdf.stat().st_size / 1024
             })
 
+def extract_text_from_pdf(pdf_path):
+    """Extracts text from every page of a PDF."""
+    with pymu.open(pdf_path) as doc:
+        pages = []
+
+        for page in doc:
+            pages.append(page.get_text())
+
+    return "\n".join(pages)
+
 def main():
     folder = Path("research_papers")
     pdf_files = get_pdf_files(folder)
@@ -29,6 +40,12 @@ def main():
 
     output_file = Path("inventory.csv")
     export_inventory(pdf_files, output_file)
+
+    pdf_path = Path("research_papers/download.pdf")
+    extracted_text = extract_text_from_pdf(pdf_path)
+
+    print("\n --Extracted Text from download.pdf--")
+    print(extracted_text[:1000])
 
     print(f"Inventory saved to: {output_file.resolve()}")
 if __name__ == "__main__":
