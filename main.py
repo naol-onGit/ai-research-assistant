@@ -36,6 +36,15 @@ def save_extracted_text_to_file(text, output_path):
 
     output_path.write_text(text, encoding="utf-8")
 
+def process_pdfs(input_folder, output_folder):
+    pdf_files = get_pdf_files(input_folder)
+
+    for pdf_path in pdf_files:
+        extracted_text = extract_text_from_pdf(pdf_path)
+
+        output_path = Path(output_folder) / f"{pdf_path.stem}.txt"
+        save_extracted_text_to_file(extracted_text, output_path)
+
 def main():
     folder = Path("research_papers")
     pdf_files = get_pdf_files(folder)
@@ -60,6 +69,9 @@ def main():
     save_extracted_text_to_file(extracted_text, output_path)
 
     print(f"Extracted text saved to: {output_path.resolve()}")
+
+    process_pdfs("research_papers", "extracted_text")
+    print("PDF processing completed.")
 
 if __name__ == "__main__":
     main()

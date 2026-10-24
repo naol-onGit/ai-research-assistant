@@ -110,3 +110,23 @@ def test_save_extracted_text_unicode(tmp_path):
 
     save_extracted_text_to_file(sample_text, output_path)
     assert output_path.read_text(encoding="utf-8") == sample_text
+
+from main import process_pdfs
+
+def test_process_pdfs_creates_text_files(tmp_path):
+    input_folder = tmp_path / "research_papers"
+    output_folder = tmp_path / "extracted_text"
+
+    input_folder.mkdir()
+    pdf_path = input_folder / "sample.pdf"
+
+    with pymu.open() as doc:
+        page = doc.new_page()
+        page.insert_text((72, 72), "Batch processing works.")
+        doc.save(pdf_path)
+
+    process_pdfs(input_folder, output_folder)
+
+    output_file = output_folder / "sample.txt"
+    assert output_file.exists()
+    assert "Batch processing works." in output_file.read_text(encoding="utf-8")
