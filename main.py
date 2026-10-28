@@ -45,6 +45,22 @@ def process_pdfs(input_folder, output_folder):
         output_path = Path(output_folder) / f"{pdf_path.stem}.txt"
         save_extracted_text_to_file(extracted_text, output_path)
 
+def chunk_text(text, chunk_size=500, overlap=50):
+    """Split text into overlapping chunks."""
+    if chunk_size <=0:
+        raise ValueError("Chunk size must be greater than zero.")
+    if overlap < 0 or overlap >= chunk_size:
+        raise ValueError("Overlap must be non-negative and less than or equal to chunk size.")
+
+    chunks = []
+    step = chunk_size - overlap
+
+    for start in range(0, len(text), step):
+        chunk = text[start: start + chunk_size]
+        chunks.append(chunk)
+
+    return chunks
+
 def main():
     folder = Path("research_papers")
     pdf_files = get_pdf_files(folder)
@@ -72,6 +88,10 @@ def main():
 
     process_pdfs("research_papers", "extracted_text")
     print("PDF processing completed.")
+
+    text = "ABCDEFGHIJKL"
+    chunks = chunk_text(text, chunk_size=5, overlap=2)
+    print(chunks)
 
 if __name__ == "__main__":
     main()

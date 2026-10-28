@@ -1,3 +1,4 @@
+import pytest
 from main import get_pdf_files
 
 def test_get_pdf_files(tmp_path):
@@ -130,3 +131,37 @@ def test_process_pdfs_creates_text_files(tmp_path):
     output_file = output_folder / "sample.txt"
     assert output_file.exists()
     assert "Batch processing works." in output_file.read_text(encoding="utf-8")
+
+from main import chunk_text
+
+def test_chunk_text():
+    text = "ABCDEFGHIJKL"
+    result = chunk_text(text, chunk_size=5, overlap=2)
+
+    assert result == ["ABCDE", "DEFGH", "GHIJK", "JKL"]
+
+def test_chunk_text_without_overlap():
+    text = "ABCDEFGHIJ"
+
+    result = chunk_text(text, chunk_size=4, overlap=0)
+
+    assert result == ["ABCD", "EFGH", "IJ"]
+
+def test_chunk_text_empty_string():
+    text = ""
+    result = chunk_text(text, chunk_size=3, overlap=1)
+
+    assert result == []
+
+def test_chunk_text_invalid_chunk_size():
+    with pytest.raises(ValueError):
+        chunk_text("Hello world", chunk_size=0, overlap=0)
+
+def test_chunk_text_invald_overlap():
+    with pytest.raises(ValueError):
+        chunk_text("Hello world", chunk_size=5, overlap=5)
+        chunk_text("Hello world", chunk_size=5, overlap=-2) # Added this statement inorder to test for negative values
+
+
+
+    
