@@ -61,6 +61,22 @@ def chunk_text(text, chunk_size=500, overlap=50):
 
     return chunks
 
+def create_chunk_records(text, source_filename, chunk_size=500, overlap=50):
+    """Create text chunk records with source and position metadata."""
+    chunks = chunk_text(text, chunk_size = chunk_size, overlap = overlap)
+    records = []
+
+    for index, chunk in enumerate(chunks, start = 1):
+        record = {
+            "source": source_filename,
+            "chunk_index": index,
+            "text": chunk
+        }
+
+        records.append(record)
+
+    return records
+
 def main():
     folder = Path("research_papers")
     pdf_files = get_pdf_files(folder)
@@ -92,6 +108,16 @@ def main():
     text = "ABCDEFGHIJKL"
     chunks = chunk_text(text, chunk_size=5, overlap=2)
     print(chunks)
+
+    sample_text = (
+        "Artificial intelligence supports scientific research. "
+        "Machine learning helps researchers discover patterns. "
+        "Language models can summarize scientific literature."
+    )
+    
+    records = create_chunk_records(sample_text, source_filename="sample_research.pdf", chunk_size=60, overlap=10)
+    for record in records:
+        print(record)
 
 if __name__ == "__main__":
     main()

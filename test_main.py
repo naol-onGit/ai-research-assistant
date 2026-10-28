@@ -162,6 +162,77 @@ def test_chunk_text_invald_overlap():
         chunk_text("Hello world", chunk_size=5, overlap=5)
         chunk_text("Hello world", chunk_size=5, overlap=-2) # Added this statement inorder to test for negative values
 
+from main import create_chunk_records
+
+def test_create_chunk_records_returns_correct_metadata():
+    text = "ABCDEFGHIJ"
+
+    records = create_chunk_records(
+        text,
+        source_filename="research.pdf",
+        chunk_size=5,
+        overlap=0,
+    )
+
+    assert len(records) == 2
+
+    assert records[0] == {
+        "source": "research.pdf",
+        "chunk_index": 1,
+        "text": "ABCDE",
+    }
+
+    assert records[1] == {
+        "source": "research.pdf",
+        "chunk_index": 2,
+        "text": "FGHIJ",
+    }
 
 
-    
+def test_create_chunk_records_uses_overlapping_chunks():
+    text = "ABCDEFGHIJ"
+
+    records = create_chunk_records(
+        text,
+        source_filename="research.pdf",
+        chunk_size=6,
+        overlap=2,
+    )
+
+    assert records[0]["text"] == "ABCDEF"
+    assert records[1]["text"] == "EFGHIJ"
+
+
+def test_create_chunk_records_uses_sequential_indices():
+    text = "ABCDEFGHIJKLMNO"
+
+    records = create_chunk_records(
+        text,
+        source_filename="research.pdf",
+        chunk_size=5,
+        overlap=0,
+    )
+
+    assert [record["chunk_index"] for record in records] == [1, 2, 3]
+
+
+def test_create_chunk_records_handles_empty_text():
+    records = create_chunk_records(
+        "",
+        source_filename="empty.pdf",
+        chunk_size=5,
+        overlap=0,
+    )
+
+    assert records == []
+
+
+def test_create_chunk_records_preserves_source_filename():
+    records = create_chunk_records(
+        "Hello world",
+        source_filename="AI Research Paper.pdf",
+        chunk_size=20,
+        overlap=0,
+    )
+
+    assert records[0]["source"] == "AI Research Paper.pdf"
