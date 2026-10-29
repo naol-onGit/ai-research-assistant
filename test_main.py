@@ -236,3 +236,56 @@ def test_create_chunk_records_preserves_source_filename():
     )
 
     assert records[0]["source"] == "AI Research Paper.pdf"
+
+from main import process_pdf_into_chunks
+
+def test_process_pdf_into_chunks_return_chunk_records(tmp_path):
+    pdf_path = tmp_path / "research.pdf"
+
+    doc = pymu.open()
+    page = doc.new_page()
+    page.insert_text((50, 50),  "Artificial intelligence supports scientific research. "
+        "Machine learning helps researchers discover patterns.")
+    doc.save(pdf_path)
+    doc.close()
+
+    records = process_pdf_into_chunks(pdf_path, chunk_size=50, overlap=10)
+    assert len(records) > 0
+    assert records[0]["source"] == "research.pdf"
+    assert records[0]["chunk_index"] == 1
+    assert records[0]["text"] != " "
+
+def test_process_pdf_into_chunks_preserves_chunk_indices(tmp_path):
+    pdf_path = tmp_path / "research.pdf"
+
+    doc = pymu.open()
+    page = doc.new_page()
+    page.insert_text(
+        (50, 50),
+        "A" * 200
+    )
+    doc.save(pdf_path)
+    doc.close()
+
+    records = process_pdf_into_chunks(
+        pdf_path,
+        chunk_size=50,
+        overlap=10,
+    )
+
+    expected_indices = list(range(1, len(records) + 1))
+
+    assert [record["chunk_index"] for record in records] == expected_indices
+
+
+def test_process_pdf_into_chunks_handles_empty_pdf(tmp_path):
+    pdf_path = tmp_path / "empty.pdf"
+
+    doc = pymu.open()
+    doc.new_page()
+    doc.save(pdf_path)
+    doc.close()
+
+    records = process_pdf_into_chunks(pdf_path)
+
+    assert records == []

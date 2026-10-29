@@ -77,6 +77,16 @@ def create_chunk_records(text, source_filename, chunk_size=500, overlap=50):
 
     return records
 
+def process_pdf_into_chunks(pdf_path, chunk_size=500, overlap=50):
+    """This function is an example of pipeline which extracts text from a pdf and convert it into chunk records."""
+
+    pdf_path = Path(pdf_path)
+
+    text = extract_text_from_pdf(pdf_path)
+    records = create_chunk_records(text, source_filename=pdf_path.name, chunk_size=chunk_size, overlap=overlap)
+    return records
+
+
 def main():
     folder = Path("research_papers")
     pdf_files = get_pdf_files(folder)
@@ -118,6 +128,9 @@ def main():
     records = create_chunk_records(sample_text, source_filename="sample_research.pdf", chunk_size=60, overlap=10)
     for record in records:
         print(record)
+
+    processed_records = process_pdf_into_chunks(pdf_path, chunk_size=100, overlap=20)
+    print(f"Processed {len(processed_records)} chunk records from {pdf_path.name}.")
 
 if __name__ == "__main__":
     main()
