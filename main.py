@@ -1,6 +1,7 @@
 from pathlib import Path
 import pymupdf as pymu
 import csv
+import json
 
 def get_pdf_files(folder_path):
     folder_path = Path(folder_path)
@@ -85,6 +86,17 @@ def process_pdf_into_chunks(pdf_path, chunk_size=500, overlap=50):
     text = extract_text_from_pdf(pdf_path)
     records = create_chunk_records(text, source_filename=pdf_path.name, chunk_size=chunk_size, overlap=overlap)
     return records
+
+def save_chunk_records(records, output_file):
+    """Save the chunk records to a json file."""
+    output_file = Path(output_file)
+
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(output_file, "w", encoding="utf-8") as file:
+        json.dump(records, file, indent=4, ensure_ascii=False)
+
+
 
 
 def main():

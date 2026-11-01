@@ -289,3 +289,90 @@ def test_process_pdf_into_chunks_handles_empty_pdf(tmp_path):
     records = process_pdf_into_chunks(pdf_path)
 
     assert records == []
+
+import json
+from main import save_chunk_records
+
+def test_save_chunk_records_writes_correct_data(tmp_path):
+    records = [
+        {"source": "research.pdf",
+         "chunk_index": 1,
+         "text": "AI supports scientific research.",}
+    ]
+
+    output_file = tmp_path / "chunks.json"
+
+    save_chunk_records(records, output_file)
+    assert output_file.exists()
+
+    with open(output_file, "r", encoding="utf-8") as file:
+        saved_records = json.load(file)
+
+    assert saved_records == records
+
+def test_save_chunk_records_preserves_all_fields(tmp_path):
+    records = [
+        {
+            "source": "AI_Paper.pdf",
+            "chunk_index": 3,
+            "text": "Machine learning helps researchers.",
+        }
+    ]
+
+    output_file = tmp_path / "chunks.json"
+    save_chunk_records(records, output_file)
+
+    with open(output_file, "r", encoding="utf-8") as file:
+        saved_records = json.load(file)
+
+    assert saved_records[0]["source"] == "AI_Paper.pdf"
+    assert saved_records[0]["chunk_index"] == 3
+    assert saved_records[0]["text"] == ("Machine learning helps researchers.")
+
+def test_save_chunk_records_creates_missing_directory(tmp_path):
+    records = [
+        {
+            "source": "research.pdf",
+            "chunk_index": 1,
+            "text": "Sample research text.",
+        }
+    ]
+
+    output_file = tmp_path / "data" / "chunk.json"
+
+    save_chunk_records(records, output_file)
+
+    assert output_file.exists()
+    assert output_file.parent.is_dir()
+
+def test_save_chunk_records_handles_empty_list(tmp_path):
+    records = []
+    output_file = tmp_path / "chunks.json"
+
+    save_chunk_records(records, output_file)
+
+    with open(output_file, "r", encoding="utf-8") as file:
+        saved_records = json.load(file)
+
+    assert saved_records == []
+
+def test_save_chunk_records_preserves_unicode_text(tmp_path):
+    records = [
+        {
+            "source": "amharic_research.pdf",
+            "chunk_index": 1,
+            "text": "ሰላም — AI supports scientific research.",
+        }
+    ]
+
+    output_file = tmp_path / "chunks.json"
+
+    save_chunk_records(records, output_file)
+
+    with open(output_file, "r", encoding="utf-8") as file:
+        saved_records = json.load(file)
+
+    assert saved_records == records
+
+    saved_text = output_file.read_text(encoding="utf-8")
+    assert "ሰላም" in saved_text
