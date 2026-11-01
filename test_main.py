@@ -376,3 +376,54 @@ def test_save_chunk_records_preserves_unicode_text(tmp_path):
 
     saved_text = output_file.read_text(encoding="utf-8")
     assert "ሰላም" in saved_text
+
+from main import load_chunk_records
+
+def test_load_chunk_records_reads_correct_data(tmp_path):
+    records = [
+        {
+            "source": "research_paper.pdf",
+            "chunk_index": 1,
+            "text": "Machine learning is useful."
+    }
+    ]
+
+    input_file = tmp_path / "chunks.json"
+    with open(input_file, "w", encoding="utf-8") as file:
+        json.dump(records, file)
+
+    loaded_records = load_chunk_records(input_file)
+    assert loaded_records == records
+
+def test_load_chunk_records_handles_empty_list(tmp_path):
+    input_file = tmp_path / "chunks.json"
+    input_file.write_text("[]", encoding="utf-8")
+
+    loaded_records = load_chunk_records(input_file)
+
+    assert loaded_records == []
+
+def test_load_chunk_records_missing_file(tmp_path):
+    input_file = tmp_path / "missing.json"
+
+    with pytest.raises(FileNotFoundError):
+        load_chunk_records(input_file)
+
+def test_load_chunk_records_preserve_unicode(tmp_path):
+    records = [
+         {"source": "research.pdf",
+            "chunk_index": 1,
+            "text": "የማሽን ትምህርት"}
+    ]  
+
+    input_file = tmp_path / "chunks.json"
+
+    with open(input_file, "w", encoding="utf") as file:
+        json.dump(records, file, ensure_ascii=False)
+
+    loaded_records = load_chunk_records(input_file)
+
+    assert loaded_records == records
+
+
+        

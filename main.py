@@ -96,8 +96,14 @@ def save_chunk_records(records, output_file):
     with open(output_file, "w", encoding="utf-8") as file:
         json.dump(records, file, indent=4, ensure_ascii=False)
 
+def load_chunk_records(input_file):
+    """Load the chunk records from a JSON file."""
+    input_file = Path(input_file)
 
+    with open(input_file, "r", encoding="utf-8") as file:
+        records = json.load(file)
 
+    return records
 
 def main():
     folder = Path("research_papers")
