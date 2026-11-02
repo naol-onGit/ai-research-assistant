@@ -105,6 +105,23 @@ def load_chunk_records(input_file):
 
     return records
 
+def search_chunks(records, query):
+    """Search chunk records for a keyword or phrase."""
+    query = query.strip().lower()
+
+    if not query:
+        raise ValueError("Search query cannot be empty.")
+
+    matching_records = []
+
+    for record in records:
+        text = record["text"]
+
+        if query in text.lower():
+            matching_records.append(record)
+
+    return matching_records
+
 def main():
     folder = Path("research_papers")
     pdf_files = get_pdf_files(folder)

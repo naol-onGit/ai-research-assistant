@@ -425,5 +425,99 @@ def test_load_chunk_records_preserve_unicode(tmp_path):
 
     assert loaded_records == records
 
+from main import search_chunks
+
+def test_search_chunks_finds_matching_records():
+    records =  [
+        {
+            "source": "paper1.pdf",
+            "chunk_index": 1,
+            "text": "Machine learning is useful in healthcare."
+        },
+        {
+            "source": "paper2.pdf",
+            "chunk_index": 2,
+            "text": "Neural networks analyze medical images."
+        },
+        {
+            "source": "paper3.pdf",
+            "chunk_index": 1,
+            "text": "Machine learning can detect diseases."
+        }
+    ]
+
+    results = search_chunks(records, "machine learning")
+
+    assert len(results) == 2
+    assert results[0]["source"] == "paper1.pdf"
+    assert results[1]["source"] == "paper3.pdf"
+
+def test_search_chunks_is_case_insensitive():
+    records = [
+        {
+            "source": "paper1.pdf",
+            "chunk_index": 1,
+            "text": "Machine Learning improves medical diagnosis."
+        }
+    ]
+
+    results = search_chunks(records, "MACHINE LEARNING")
+
+    assert len(results) == 1
+    assert results[0]["source"] == "paper1.pdf"
+
+def test_search_chunks_returns_empty_list_when_no_match():
+    records = [
+        {
+            "source": "paper1.pdf",
+            "chunk_index": 1,
+            "text": "Machine learning improves medical diagnosis."
+        }
+    ]
+
+    results = search_chunks(records, "robotics")
+
+    assert results == []
+
+def test_search_chunks_rejects_empty_query():
+    records = [{
+            "source": "paper1.pdf",
+            "chunk_index": 1,
+            "text": "Machine learning improves medical diagnosis."
+        }]
+
+    with pytest.raises(ValueError):
+        search_chunks(records, "")
+
+def test_search_chunks_rejects_whitespace_query():
+    records = [
+        {
+            "source": "paper1.pdf",
+            "chunk_index": 1,
+            "text": "Machine learning improves medical diagnosis."
+        }
+    ]
+
+    with pytest.raises(ValueError):
+        search_chunks(records, "   ")
+
+def test_search_chunks_preserves_chunk_metadata():
+    records = [
+        {
+            "source": "paper1.pdf",
+            "chunk_index": 4,
+            "text": "Machine learning improves medical diagnosis."
+        }
+    ]
+
+    results = search_chunks(records, "machine learning")
+
+    assert results[0]["source"] == "paper1.pdf"
+    assert results[0]["chunk_index"] == 4
+    assert results[0]["text"] == records[0]["text"]
+
+
+
+
 
         
