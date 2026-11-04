@@ -122,6 +122,27 @@ def search_chunks(records, query):
 
     return matching_records
 
+def rank_chunks(records, query):
+    """Rank matching chunk records by keyword frequency."""
+    query = query.strip().lower()
+
+    if not query:
+        raise ValueError("Search query cannot be empty")
+
+    ranked_results = []
+
+    for record in records:
+        text = record["text"].lower()
+
+        score = text.count(query)
+
+        if score > 0:
+            ranked_results.append({"record": record, "score": score})
+
+        ranked_results.sort(key=lambda result: result["score"], reverse=True)
+
+    return ranked_results
+
 def main():
     folder = Path("research_papers")
     pdf_files = get_pdf_files(folder)

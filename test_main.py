@@ -516,8 +516,123 @@ def test_search_chunks_preserves_chunk_metadata():
     assert results[0]["chunk_index"] == 4
     assert results[0]["text"] == records[0]["text"]
 
+from main import rank_chunks
 
+def test_rank_chunks_sorts_by_score():
+    records = [
+        {
+            "source": "paper1.pdf",
+            "chunk_index": 1,
+            "text": "Machine learning is useful."
+        },
+        {
+            "source": "paper2.pdf",
+            "chunk_index": 2,
+            "text": (
+                "Machine learning is important. "
+                "Machine learning is powerful."
+            )
+        }
+    ]
 
+    results = rank_chunks(records, "machine learning")
 
+    assert results[0]["record"]["source"] == "paper2.pdf"
+    assert results[1]["record"]["source"] == "paper1.pdf"
 
-        
+def test_rank_chunks_calculates_correct_scores():
+    records = [
+        {
+            "source": "paper1.pdf",
+            "chunk_index": 1,
+            "text": "Machine learning is useful."
+        },
+        {
+            "source": "paper2.pdf",
+            "chunk_index": 2,
+            "text": (
+                "Machine learning is important. "
+                "Machine learning is powerful."
+            )
+        }   
+    ]
+
+    results = rank_chunks(records, "machine learning")
+
+    assert results[0]["score"] == 2
+    assert results[1]["score"] == 1
+
+def test_rank_chunks_is_case_insensitive():
+    records = [
+         {
+            "source": "paper1.pdf",
+            "chunk_index": 1,
+            "text": "Machine Learning is useful."
+        }
+    ]
+
+    results = rank_chunks(records, "MACHINE LEARNING")
+
+    assert len(results) == 1
+    assert results[0]["score"] == 1
+
+def test_rank_chunks_returns_empty_list_when_no_match():
+    records = [
+        {
+            "source": "paper1.pdf",
+            "chunk_index": 1,
+            "text": "Machine learning is useful."
+        }
+    ]
+
+    results = rank_chunks(records, "robotics")
+
+    assert results == []
+
+def test_rank_chunks_rejects_empty_query():
+    records = []
+
+    with pytest.raises(ValueError):
+        rank_chunks(records, "")
+
+def test_rank_chunks_rejects_whitespace_query():
+    records = []
+
+    with pytest.raises(ValueError):
+        rank_chunks(records, "    ")
+
+def test_rank_chunks_preserves_meta_data():
+    records = [
+        {
+            "source": "research.pdf",
+            "chunk_index": 5,
+            "text": "Machine learning is useful."
+        }
+    ]
+
+    results = rank_chunks(records, "machine learning")
+
+    assert results[0]["record"]["source"] == "research.pdf"
+    assert results[0]["record"]["chunk_index"] == 5
+    assert results[0]["record"]["text"] == records[0]["text"]
+
+def test_rank_chunks_handles_equal_scores():
+    records = [
+        {
+            "source": "paper1.pdf",
+            "chunk_index": 1,
+            "text": "Machine learning is useful."
+        },
+        {
+            "source": "paper2.pdf",
+            "chunk_index": 2,
+            "text": "Machine learning is powerful."
+        }
+    ]
+
+    results = rank_chunks(records, "machine learning")
+
+    assert len(results) == 2
+    assert results[0]["score"] == 1
+    assert results[1]["score"] == 1
+  
