@@ -6,3 +6,4 @@ __pycache__/
 research_papers/
 inventory.csv
 extracted_text/
+embed_demo.py
