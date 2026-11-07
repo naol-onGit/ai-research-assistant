@@ -677,3 +677,52 @@ def test_rank_chunks_tfidf_preserves_record_metadata():
     assert results[0]["record"]["chunk_index"] == 0
     assert isinstance(results[0]["score"], float)
 
+import numpy as np
+
+class FakeModel:
+    """Tiny stand-in: 'car'/'automobile' -> vehicle axis, 'banana' -> food axis."""
+    def encode(self, texts):
+        vectors = []
+        for text in texts:
+            text = text.lower()
+            vehicle = 1.0 if ("car" in text or "automobile" in text) else 0.0
+            food = 1.0 if "banana" in text else 0.0
+            vectors.append([vehicle, food])
+        return np.array(vectors)
+
+from main import rank_chunks_semantic
+
+def test_rank_chunks_semantic_ranks_by_meaning(monkeypatch):
+    monkeypatch.setattr("main.get_embedding_model", lambda: FakeModel())
+    records = [
+        {"source": "a.pdf", "chunk_index": 1, "text": "I ate a banana"},
+        {"source": "a.pdf", "chunk_index": 2, "text": "The automobile was fast"},
+    ]
+
+    results = rank_chunks_semantic(records, "car")
+    assert results[0]["record"] == records[1]
+    assert results[0]["score"] > results[1]["score"]
+
+def test_rank_chunks_semantic_respects_top_k(monkeypatch):
+    monkeypatch.setattr("main.get_embedding_model", lambda: FakeModel())
+    records = [
+        {"source": "a.pdf", "chunk_index": 1, "text": "a car"},
+        {"source": "a.pdf", "chunk_index": 2, "text": "an automobile"},
+        {"source": "a.pdf", "chunk_index": 3, "text": "a banana"},
+    ]
+
+    results = rank_chunks_semantic(records, "car", top_k=2)
+
+    assert len(results) == 2
+
+def test_rank_chunks_semantics_rejects_empty_query():
+    with pytest.raises(ValueError):
+        rank_chunks_semantic([{"source": "a.pdf", "chunk_index": 1, "text": "x"}], "    ")
+
+def test_rank_chunks_semantics_rejects_invalid_top_k():
+    with pytest.raises(ValueError):
+        rank_chunks_semantic([{"source": "a.pdf", "chunk_index": 1, "text": "x"}], "car", top_k=0)
+
+def test_rank_chunks_semantics_returns_empty_list_for_empty_records():
+    assert rank_chunks_semantic([], "car") == []
+

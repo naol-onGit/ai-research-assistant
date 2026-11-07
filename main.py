@@ -187,6 +187,45 @@ def rank_chunks_tfidf(records, query):
 
     return ranked_results
 
+_model = None
+
+def get_embedding_model():
+    """Load the embedding model once and reuse it."""
+    global _model
+    if _model is None:
+        from sentence_transformers import SentenceTransformer
+        _model = SentenceTransformer("all-MiniLM-L6-v2")
+    return _model
+
+def rank_chunks_semantic(records, query, top_k=3):
+    """Rank chunk records by embedding similarity to the query."""
+    query = query.strip()
+
+    if not query:
+        raise ValueError("Search query cannot be empty.")
+    if top_k < 1:
+        raise ValueError("top_k must be at least 1.")
+    if not records:
+        return []
+
+    model = get_embedding_model()
+
+    texts = [record["text"] for record in records]
+
+    chunk_embeddings = model.encode(texts)
+    query_embeddings = model.encode([query])
+
+    scores = cosine_similarity(query_embeddings, chunk_embeddings)[0]
+
+    ranked_results = []
+
+    for record, score in zip(records, scores):
+        ranked_results.append({"record": record, "score": float(score)})
+
+    ranked_results.sort(key= lambda result: result["score"], reverse=True)
+
+    return ranked_results[:top_k]
+
 def main():
     folder = Path("research_papers")
     pdf_files = get_pdf_files(folder)
