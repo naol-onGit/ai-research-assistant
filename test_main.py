@@ -635,4 +635,45 @@ def test_rank_chunks_handles_equal_scores():
     assert len(results) == 2
     assert results[0]["score"] == 1
     assert results[1]["score"] == 1
-  
+
+from main import rank_chunks_tfidf
+
+def test_rank_chunks_tfidf_rejects_whitespace_query():
+    records = [{"source": "a.pdf", "chunk_index": 0, "text": "neural networks"}]
+
+    with pytest.raises(ValueError):
+        rank_chunks_tfidf(records, "    ")
+
+def test_rank_chunks_tfidf_returns_empty_list_for_empty_records():
+    records = []
+
+    results = rank_chunks_tfidf(records, "machine learning")
+    assert results == []
+
+def test_rank_chunks_tfidf_ranks_more_relevant_chunk_first():
+    records = [
+        {"source": "b.pdf", "chunk_index": 1, "text": "neural networks are everywhere"},
+        {"source": "a.pdf", "chunk_index": 0, "text": "neural neural neural networks"},
+    ]
+
+    results = rank_chunks_tfidf(records, "neural")
+    assert results[0]["record"] == records[1] 
+    assert results[0]["score"] > results[1]["score"]
+
+def test_rank_chunks_tfidf_returns_empty_list_for_absent_term():
+    records = [
+        {"source": "a.pdf", "chunk_index": 0, "text": "neural networks"},
+        {"source": "a.pdf", "chunk_index": 1, "text": "deep learning models"},
+    ]
+
+    assert rank_chunks_tfidf(records, "quantum") == []
+
+def test_rank_chunks_tfidf_preserves_record_metadata():
+    records = [{"source": "a.pdf", "chunk_index": 0, "text": "neural networks"}]
+
+    results = rank_chunks_tfidf(records, "neural")
+
+    assert results[0]["record"]["source"] == "a.pdf"
+    assert results[0]["record"]["chunk_index"] == 0
+    assert isinstance(results[0]["score"], float)
+

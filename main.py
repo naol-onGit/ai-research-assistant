@@ -1,5 +1,7 @@
 from pathlib import Path
 import pymupdf as pymu
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 import csv
 import json
 
@@ -140,6 +142,48 @@ def rank_chunks(records, query):
             ranked_results.append({"record": record, "score": score})
 
         ranked_results.sort(key=lambda result: result["score"], reverse=True)
+
+    return ranked_results
+
+def rank_chunks_tfidf(records, query):
+    """Rank matching chunk records using TF-IDF and cosine similarity."""
+    query = query.strip()
+
+    if not query:
+        raise ValueError("Search query cannot be empty.")
+    
+    if not records:
+        return []
+
+    texts = []
+
+    for record in records:
+        texts.append(record["text"])
+
+    vectorizer = TfidfVectorizer()
+
+    try:
+        tfidf_matrix = vectorizer.fit_transform(texts)
+    except ValueError:
+        # TfidfVectorizer raises when every record has empty/tokenless text.
+        return []
+
+    query_vector = vectorizer.transform([query])
+
+    similarity_scores = cosine_similarity(query_vector, tfidf_matrix)[0]
+
+    # For note purposes only: why the [0]?
+    # Because the cosine_similarity() returns a 2D arrays since it compares a collection of vectors.
+    # Since our query contains only one document, [0] extracts its first(and only) row,
+    # giving us a one dimensional array of scores.
+
+    ranked_results = []
+
+    for record, score in zip(records, similarity_scores):
+        if score > 0:
+            ranked_results.append({"record": record, "score": float(score)})
+
+    ranked_results.sort(key=lambda result: result["score"], reverse=True)
 
     return ranked_results
 
