@@ -226,6 +226,23 @@ def rank_chunks_semantic(records, query, top_k=3):
 
     return ranked_results[:top_k]
 
+def embed_chunks(records):
+    """Return copies of the chunk records with an 'embedding' added."""
+    if not records:
+        return []
+
+    model = get_embedding_model()
+    texts = [record["text"] for record in records]
+
+    embeddings = model.encode(texts)
+
+    embedded_records = []
+    for record, embedding in zip(records, embeddings):
+        embedded_record = record.copy()
+        embedded_record["embedding"] = embedding.tolist()
+        embedded_records.append(embedded_record)
+    return embedded_records
+
 def main():
     folder = Path("research_papers")
     pdf_files = get_pdf_files(folder)

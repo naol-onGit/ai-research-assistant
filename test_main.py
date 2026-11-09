@@ -726,3 +726,35 @@ def test_rank_chunks_semantics_rejects_invalid_top_k():
 def test_rank_chunks_semantics_returns_empty_list_for_empty_records():
     assert rank_chunks_semantic([], "car") == []
 
+from main import embed_chunks
+
+def test_embed_chunks_adds_embedding_to_each_record(monkeypatch):
+    monkeypatch.setattr("main.get_embedding_model", lambda: FakeModel())
+    records = [
+        {"source": "a.pdf", "chunk_index": 1, "text": "a car"},
+        {"source": "a.pdf", "chunk_index": 2, "text": "a banana"},
+    ]
+
+    results = embed_chunks(records)
+
+    assert len(results) == 2
+    for result in results:
+        assert len(result["embedding"]) == 2
+        assert isinstance(result["embedding"], list)
+
+
+def test_embed_chunks_preserves_metadata_and_leaves_originals_unchanged(monkeypatch):
+    monkeypatch.setattr("main.get_embedding_model", lambda: FakeModel())
+    records = [{"source": "a.pdf", "chunk_index": 1, "text": "a car"}]
+
+    results = embed_chunks(records)
+
+    assert results[0]["source"] == "a.pdf"
+    assert results[0]["chunk_index"] == 1
+    assert results[0]["text"] == "a car"
+    assert "embedding" not in records[0]
+
+
+def test_embed_chunks_returns_empty_list_for_empty_records():
+    assert embed_chunks([]) == []
+
