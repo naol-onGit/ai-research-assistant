@@ -758,3 +758,35 @@ def test_embed_chunks_preserves_metadata_and_leaves_originals_unchanged(monkeypa
 def test_embed_chunks_returns_empty_list_for_empty_records():
     assert embed_chunks([]) == []
 
+def test_rank_chunks_semantic_respects_min_score_drops_weak_matches(monkeypatch):
+    monkeypatch.setattr("main.get_embedding_model", lambda: FakeModel())
+    records = [
+        {"source": "a.pdf", "chunk_index": 1, "text": "I ate a banana"},
+        {"source": "a.pdf", "chunk_index": 2, "text": "The automobile was fast"},
+    ]
+
+    results = rank_chunks_semantic(records, "car", min_score=0.5)
+
+    assert len(results) == 1
+    assert results[0]["record"] == records[1]
+
+def test_rank_chunks_semantic_without_min_score_keeps_all_up_to_top_k(monkeypatch):
+    monkeypatch.setattr("main.get_embedding_model", lambda: FakeModel())
+    records = [
+        {"source": "a.pdf", "chunk_index": 1, "text": "I ate a banana"},
+        {"source": "a.pdf", "chunk_index": 2, "text": "The automobile was fast"},
+    ]
+
+    results = rank_chunks_semantic(records, "car")
+
+    assert len(results) == 2
+
+def test_rank_chunks_semantic_returns_empty_list_when_nothing_meets_min_score(monkeypatch):
+    monkeypatch.setattr("main.get_embedding_model", lambda: FakeModel())
+    records = [
+        {"source": "a.pdf", "chunk_index": 1, "text": "I ate a banana"},
+        {"source": "a.pdf", "chunk_index": 2, "text": "Plain text"},
+    ]
+
+    assert rank_chunks_semantic(records, "car", min_score=0.5) == []
+

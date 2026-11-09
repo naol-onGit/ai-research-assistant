@@ -197,8 +197,9 @@ def get_embedding_model():
         _model = SentenceTransformer("all-MiniLM-L6-v2")
     return _model
 
-def rank_chunks_semantic(records, query, top_k=3):
+def rank_chunks_semantic(records, query, top_k=3, min_score=None):
     """Rank chunk records by embedding similarity to the query."""
+    
     query = query.strip()
 
     if not query:
@@ -220,6 +221,8 @@ def rank_chunks_semantic(records, query, top_k=3):
     ranked_results = []
 
     for record, score in zip(records, scores):
+        if min_score is not None and score < min_score:
+            continue
         ranked_results.append({"record": record, "score": float(score)})
 
     ranked_results.sort(key= lambda result: result["score"], reverse=True)
