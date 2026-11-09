@@ -790,3 +790,40 @@ def test_rank_chunks_semantic_returns_empty_list_when_nothing_meets_min_score(mo
 
     assert rank_chunks_semantic(records, "car", min_score=0.5) == []
 
+from main import add_chunks, get_chroma_collection
+
+def make_records():
+    return [
+        {"source": "a.pdf", "chunk_index": 1, "text": "a car", "embedding": [1.0, 0.0]},
+        {"source": "a.pdf", "chunk_index": 2, "text": "a banana", "embedding": [0.0, 1.0]},
+    ]
+
+def test_add_chunks_stores_records(tmp_path):
+    stored = add_chunks("u1", make_records(), db_path=str(tmp_path))
+    assert stored == 2
+    assert get_chroma_collection(str(tmp_path)).count() == 2
+
+def test_add_chunks_saves_text_and_metadata(tmp_path):
+    add_chunks("u1", make_records(), db_path=str(tmp_path))
+    result = get_chroma_collection(str(tmp_path)).get(ids=["u1:a.pdf:2"])
+
+    assert result["documents"][0] == "a banana"
+    assert result["metadatas"][0]["user_id"] == "u1"
+    assert result["metadatas"][0]["source"] == "a.pdf"
+    assert result["metadatas"][0]["chunk_index"] == 2
+
+
+def test_add_chunks_twice_does_not_create_duplicates(tmp_path):
+    add_chunks("u1", make_records(), db_path=str(tmp_path))
+    add_chunks("u1", make_records(), db_path=str(tmp_path))
+
+    assert get_chroma_collection(str(tmp_path)).count() == 2
+
+
+def test_add_chunks_requires_user_id(tmp_path):
+    with pytest.raises(ValueError):
+        add_chunks("", make_records(), db_path=str(tmp_path))
+
+
+def test_add_chunks_returns_zero_for_empty_records(tmp_path):
+    assert add_chunks("u1", [], db_path=str(tmp_path)) == 0

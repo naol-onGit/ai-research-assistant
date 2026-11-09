@@ -7,3 +7,6 @@ research_papers/
 inventory.csv
 extracted_text/
 embed_demo.py
+chroma_demo_db/
+chroma_db/
+chroma_demo.py

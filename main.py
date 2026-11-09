@@ -246,6 +246,51 @@ def embed_chunks(records):
         embedded_records.append(embedded_record)
     return embedded_records
 
+import chromadb
+
+
+def get_chroma_collection(db_path="chroma_db"):
+    """Open (or create) the shared collection of research chunks."""
+    client = chromadb.PersistentClient(path=db_path)
+    return client.get_or_create_collection(
+        name="research_chunks",
+        configuration={"hnsw": {"space": "cosine"}},
+    )
+
+
+def add_chunks(user_id, embedded_records, db_path="chroma_db"):
+    """Store embedded chunk records for one user."""
+    if not user_id:
+        raise ValueError("user_id is required.")
+    if not embedded_records:
+        return 0
+
+    collection = get_chroma_collection(db_path)
+
+    ids = [
+        f"{user_id}:{record['source']}:{record['chunk_index']}"
+        for record in embedded_records
+    ]
+    embeddings = [record["embedding"] for record in embedded_records]
+    documents = [record["text"] for record in embedded_records]
+    metadatas = [
+        {
+            "user_id": user_id,
+            "source": record["source"],
+            "chunk_index": record["chunk_index"],
+        }
+        for record in embedded_records
+    ]
+
+    collection.upsert(
+        ids=ids,
+        embeddings=embeddings,
+        documents=documents,
+        metadatas=metadatas,
+    )
+
+    return len(embedded_records)
+
 def main():
     folder = Path("research_papers")
     pdf_files = get_pdf_files(folder)
