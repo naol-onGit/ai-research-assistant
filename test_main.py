@@ -827,3 +827,82 @@ def test_add_chunks_requires_user_id(tmp_path):
 
 def test_add_chunks_returns_zero_for_empty_records(tmp_path):
     assert add_chunks("u1", [], db_path=str(tmp_path)) == 0
+
+from main import search_user_chunks
+
+def store_demo_chunks(tmp_path):
+    add_chunks(
+        "u1",
+        [
+            {"source": "a.pdf", "chunk_index": 1, "text": "a car", "embedding": [1.0, 0.0]},
+            {"source": "a.pdf", "chunk_index": 2, "text": "a banana", "embedding": [0.0, 1.0]},
+        ],
+        db_path=str(tmp_path),
+    )
+
+
+def test_search_user_chunks_ranks_best_match_first(tmp_path, monkeypatch):
+    monkeypatch.setattr("main.get_embedding_model", lambda: FakeModel())
+    store_demo_chunks(tmp_path)
+
+    results = search_user_chunks("u1", "car", db_path=str(tmp_path))
+
+    assert results[0]["record"]["text"] == "a car"
+    assert results[0]["score"] == pytest.approx(1.0)
+    assert results[1]["record"]["text"] == "a banana"
+    assert results[1]["score"] == pytest.approx(0.0, abs=1e-6)
+
+
+def test_search_user_chunks_never_returns_another_users_chunks(tmp_path, monkeypatch):
+    monkeypatch.setattr("main.get_embedding_model", lambda: FakeModel())
+    add_chunks(
+        "u1",
+        [{"source": "a.pdf", "chunk_index": 1, "text": "u1 car notes", "embedding": [1.0, 0.0]}],
+        db_path=str(tmp_path),
+    )
+    add_chunks(
+        "u2",
+        [{"source": "b.pdf", "chunk_index": 1, "text": "u2 secret thesis", "embedding": [1.0, 0.0]}],
+        db_path=str(tmp_path),
+    )
+
+    results = search_user_chunks("u1", "car", top_k=5, db_path=str(tmp_path))
+
+    texts = [result["record"]["text"] for result in results]
+    assert texts == ["u1 car notes"]
+
+
+def test_search_user_chunks_min_score_drops_weak_matches(tmp_path, monkeypatch):
+    monkeypatch.setattr("main.get_embedding_model", lambda: FakeModel())
+    store_demo_chunks(tmp_path)
+
+    results = search_user_chunks("u1", "car", min_score=0.5, db_path=str(tmp_path))
+
+    assert len(results) == 1
+    assert results[0]["record"]["text"] == "a car"
+
+
+def test_search_user_chunks_respects_top_k(tmp_path, monkeypatch):
+    monkeypatch.setattr("main.get_embedding_model", lambda: FakeModel())
+    store_demo_chunks(tmp_path)
+
+    results = search_user_chunks("u1", "car", top_k=1, db_path=str(tmp_path))
+
+    assert len(results) == 1
+
+
+def test_search_user_chunks_returns_empty_list_for_user_with_no_chunks(tmp_path, monkeypatch):
+    monkeypatch.setattr("main.get_embedding_model", lambda: FakeModel())
+    store_demo_chunks(tmp_path)
+
+    assert search_user_chunks("nobody", "car", db_path=str(tmp_path)) == []
+
+
+def test_search_user_chunks_rejects_empty_query(tmp_path):
+    with pytest.raises(ValueError):
+        search_user_chunks("u1", "   ", db_path=str(tmp_path))
+
+
+def test_search_user_chunks_requires_user_id(tmp_path):
+    with pytest.raises(ValueError):
+        search_user_chunks("", "car", db_path=str(tmp_path))

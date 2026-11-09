@@ -291,6 +291,48 @@ def add_chunks(user_id, embedded_records, db_path="chroma_db"):
 
     return len(embedded_records)
 
+def search_user_chunks(user_id, query, top_k=3, min_score=None, db_path="chroma_db"):
+    """Search one user's stored chunks, returning {"record", "score"} results."""
+    query = query.strip()
+
+    if not user_id:
+        raise ValueError("user_id is required.")
+    if not query:
+        raise ValueError("Search query cannot be empty.")
+    if top_k < 1:
+        raise ValueError("top_k must be at least 1.")
+
+    collection = get_chroma_collection(db_path)
+    model = get_embedding_model()
+
+    query_embedding = model.encode([query]).tolist()
+
+    results = collection.query(
+        query_embeddings=query_embedding,
+        n_results=top_k,
+        where={"user_id": user_id},
+    )
+
+    documents = results["documents"][0]
+    metadatas = results["metadatas"][0]
+    distances = results["distances"][0]
+
+    ranked_results = []
+    for document, metadata, distance in zip(documents, metadatas, distances):
+        score = 1 - distance
+
+        if min_score is not None and score < min_score:
+            continue
+
+        record = {
+            "source": metadata["source"],
+            "chunk_index": metadata["chunk_index"],
+            "text": document,
+        }
+        ranked_results.append({"record": record, "score": float(score)})
+
+    return ranked_results
+
 def main():
     folder = Path("research_papers")
     pdf_files = get_pdf_files(folder)
