@@ -11,3 +11,5 @@ chroma_demo_db/
 chroma_db/
 chroma_demo.py
 delete_demo.py
+e2e_demo.py
+e2e_demo_db/
