@@ -906,3 +906,48 @@ def test_search_user_chunks_rejects_empty_query(tmp_path):
 def test_search_user_chunks_requires_user_id(tmp_path):
     with pytest.raises(ValueError):
         search_user_chunks("", "car", db_path=str(tmp_path))
+
+from main import delete_user_documents
+
+def store_two_users(tmp_path):
+    for user_id in ["u1", "u2"]:
+        add_chunks(
+            user_id,
+            [
+                {"source": "a.pdf", "chunk_index": 1, "text": "a", "embedding": [1.0, 0.0]},
+                {"source": "b.pdf", "chunk_index": 1, "text": "b", "embedding": [0.0, 1.0]},
+            ],
+            db_path=str(tmp_path),
+        )
+
+
+def test_delete_user_documents_removes_only_that_users_paper(tmp_path):
+    store_two_users(tmp_path)
+
+    deleted = delete_user_documents("u1", "a.pdf", db_path=str(tmp_path))
+
+    remaining = sorted(get_chroma_collection(str(tmp_path)).get()["ids"])
+    assert deleted == 1
+    assert remaining == ["u1:b.pdf:1", "u2:a.pdf:1", "u2:b.pdf:1"]
+
+def test_delete_user_documents_returns_zero_if_no_existing_paper(tmp_path):
+    store_two_users(tmp_path)
+
+    deleted = delete_user_documents("u1", "nonexistent.pdf", db_path=str(tmp_path))
+
+    remaining = sorted(get_chroma_collection(str(tmp_path)).get()["ids"])
+
+    assert deleted == 0
+    assert remaining == ["u1:a.pdf:1", "u1:b.pdf:1", "u2:a.pdf:1", "u2:b.pdf:1"]
+
+def test_delete_user_documents_when_an_empty_userid(tmp_path):
+    store_two_users(tmp_path)
+
+    with pytest.raises(ValueError):
+        delete_user_documents("", "a.pdf", db_path=str(tmp_path))
+
+def test_delete_user_documents_when_an_empty_source(tmp_path):
+    store_two_users(tmp_path)
+
+    with pytest.raises(ValueError):
+        delete_user_documents("u1", "", db_path=str(tmp_path))

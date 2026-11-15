@@ -333,6 +333,27 @@ def search_user_chunks(user_id, query, top_k=3, min_score=None, db_path="chroma_
 
     return ranked_results
 
+def delete_user_documents(user_id, source, db_path="chroma_db"):
+    """Delete one user's chunks for one source paper. Returns how many were deleted."""
+
+    if not user_id:
+        raise ValueError("user_id is required.")
+    if not source:
+        raise ValueError("source is required.")
+
+    collection = get_chroma_collection(db_path)
+
+    where = {"$and": [{"user_id": user_id}, {"source": source}]}
+
+    matches = collection.get(where=where)
+    ids = matches["ids"]
+
+    if not ids:
+        return 0
+
+    collection.delete(ids=ids)
+    return len(ids)
+
 def main():
     folder = Path("research_papers")
     pdf_files = get_pdf_files(folder)

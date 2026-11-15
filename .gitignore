@@ -10,3 +10,4 @@ embed_demo.py
 chroma_demo_db/
 chroma_db/
 chroma_demo.py
+delete_demo.py
