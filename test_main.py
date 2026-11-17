@@ -951,3 +951,43 @@ def test_delete_user_documents_when_an_empty_source(tmp_path):
 
     with pytest.raises(ValueError):
         delete_user_documents("u1", "", db_path=str(tmp_path))
+
+from main import build_rag_prompt, SOURCE_TAGS
+
+def make_results():
+    return [
+        {"record": {"source": "a.pdf", "chunk_index": 3, "text": "RSA is vulnerable."}, "score": 0.5},
+        {"record": {"source": "b.pdf", "chunk_index": 7, "text": "Lattices resist attacks."}, "score": 0.4},
+    ]
+
+
+def test_build_rag_prompt_labels_each_source():
+    prompt = build_rag_prompt("Which systems are weak?", make_results())
+
+    assert "[1] (a.pdf, chunk 3)" in prompt
+    assert "RSA is vulnerable." in prompt
+    assert "[2] (b.pdf, chunk 7)" in prompt
+    assert "Lattices resist attacks." in prompt
+
+
+def test_build_rag_prompt_works_without_any_results():
+    prompt = build_rag_prompt("What is a lattice?", [])
+
+    assert "What is a lattice?" in prompt
+    assert "no passages were found" in prompt
+
+
+def test_build_rag_prompt_contains_the_question():
+    assert "Which systems are weak?" in build_rag_prompt("Which systems are weak?", make_results())
+
+
+def test_build_rag_prompt_lists_all_source_tags():
+    prompt = build_rag_prompt("Any question", make_results())
+
+    for tag in SOURCE_TAGS:
+        assert f"SOURCE: {tag}" in prompt
+
+
+def test_build_rag_prompt_rejects_empty_question():
+    with pytest.raises(ValueError):
+        build_rag_prompt("   ", make_results())
