@@ -354,7 +354,7 @@ def delete_user_documents(user_id, source, db_path="chroma_db"):
     collection.delete(ids=ids)
     return len(ids)
 
-SOURCE_TAGS = ("PAPER", "PARTIAL", "GENERAL")
+SOURCE_TAGS = ("PAPERS", "PARTIAL", "GENERAL")
 
 def build_rag_prompt(question, results):
     """Build an LLM prompt from a question and (possible empty) search results."""
@@ -389,6 +389,27 @@ def build_rag_prompt(question, results):
         f"SOURCES:\n{sources_text}\n\n"
         f"QUESTION: {question}\n"
     )
+
+WARNING_MESSAGES = {
+    "PARTIAL": "Part of this answer is not from your papers. Verify it before using it.",
+    "GENERAL": "This answer is not from your papers. Verify it before using it on your research.",
+}
+
+def split_source_tag(answer):
+    """Split a model reply into (tag, next). A missing or unknown tag becomes GENERAL."""
+    lines = answer.strip().split("\n", 1)
+    first_line = lines[0].strip().strip("*`_").upper()
+    rest = lines[1].strip() if len(lines) > 1 else ""
+
+    for tag in SOURCE_TAGS:
+        if first_line == f"SOURCE: {tag}":
+            return tag, rest
+
+    return "GENERAL", answer.strip()
+
+def get_warning(tag):
+    """Return the warning for a tag, or None when the answer is fully from the papers."""
+    return WARNING_MESSAGES.get(tag, None)
 
 def main():
     folder = Path("research_papers")

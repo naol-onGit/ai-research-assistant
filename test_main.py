@@ -991,3 +991,39 @@ def test_build_rag_prompt_lists_all_source_tags():
 def test_build_rag_prompt_rejects_empty_question():
     with pytest.raises(ValueError):
         build_rag_prompt("   ", make_results())
+
+from main import split_source_tag, get_warning
+
+def test_split_source_tag_reads_papers_tag():
+    tag, text = split_source_tag("SOURCE: PAPERS\nRSA is weak [1].")
+
+    assert tag == "PAPERS"
+    assert text == "RSA is weak [1]."
+
+
+def test_split_source_tag_is_case_insensitive():
+    assert split_source_tag("source: partial\nSome text") == ("PARTIAL", "Some text")
+
+
+def test_split_source_tag_defaults_to_general_when_tag_is_missing():
+    assert split_source_tag("Just an answer.") == ("GENERAL", "Just an answer.")
+
+
+def test_split_source_tag_handles_markdown_around_the_tag():
+    assert split_source_tag("**SOURCE: PAPERS**\nText") == ("PAPERS", "Text")
+
+
+def test_split_source_tag_treats_unknown_tag_as_general():
+    tag, text = split_source_tag("SOURCE: MAYBE\nText")
+
+    assert tag == "GENERAL"
+    assert "Text" in text
+
+
+def test_get_warning_only_for_non_paper_answers():
+    assert get_warning("PAPERS") is None
+    assert get_warning("PARTIAL") 
+    assert get_warning("GENERAL")
+
+def test_source_tags_have_the_exact_expected_values():
+    assert SOURCE_TAGS == ("PAPERS", "PARTIAL", "GENERAL")
